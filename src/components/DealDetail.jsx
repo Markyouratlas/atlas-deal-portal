@@ -11,9 +11,11 @@ export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
 
   const saveStatus = async () => {
     setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const now = new Date().toISOString()
     const { error } = await supabase
       .from('deals')
-      .update({ status, notes, updated_at: new Date().toISOString() })
+      .update({ status, notes, reviewed_by: user?.id || null, reviewed_at: now, updated_at: now })
       .eq('id', deal.id)
     setSaving(false)
     if (!error && onUpdate) onUpdate()

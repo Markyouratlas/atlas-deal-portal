@@ -6,6 +6,7 @@ import PartnerDashboard from './components/PartnerDashboard'
 import AdminDashboard from './components/AdminDashboard'
 import DealForm from './components/DealForm'
 import NotificationSettings from './components/NotificationSettings'
+import AdminSettings from './components/AdminSettings'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -83,6 +84,9 @@ export default function App() {
     }
     if (view === 'notifications' && isAdmin) {
       return <NotificationSettings />
+    }
+    if (view === 'settings' && isAdmin) {
+      return <AdminSettings profile={profile} />
     }
     if (isAdmin) {
       return <AdminDashboard profile={profile} session={session} onNavigate={navigate} />
