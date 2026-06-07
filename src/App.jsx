@@ -37,7 +37,8 @@ export default function App() {
       .single()
     if (data) {
       setProfile(data)
-      setView(data.role === 'admin' ? 'admin-dashboard' : 'partner-dashboard')
+      const admin = data.role === 'admin' || data.role === 'super_admin'
+      setView(admin ? 'admin-dashboard' : 'partner-dashboard')
     }
     setLoading(false)
   }
@@ -65,7 +66,7 @@ export default function App() {
     return <AuthScreen />
   }
 
-  const isAdmin = profile.role === 'admin'
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin'
   const navigate = (v) => { setView(v); setMobileMenuOpen(false) }
 
   const renderView = () => {
@@ -84,7 +85,7 @@ export default function App() {
       return <NotificationSettings />
     }
     if (isAdmin) {
-      return <AdminDashboard profile={profile} onNavigate={navigate} />
+      return <AdminDashboard profile={profile} session={session} onNavigate={navigate} />
     }
     return <PartnerDashboard profile={profile} onNavigate={navigate} />
   }

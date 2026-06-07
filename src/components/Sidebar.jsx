@@ -1,7 +1,7 @@
 import { FileText, BarChart3, Bell, Plus, LogOut, Menu, X } from 'lucide-react'
 
 export default function Sidebar({ profile, view, onNavigate, onLogout, mobileMenuOpen, onToggleMobile }) {
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
   const navItems = isAdmin
     ? [{ id: 'admin-dashboard', label: 'Pipeline', icon: BarChart3 }, { id: 'notifications', label: 'Notifications', icon: Bell }, { id: 'register-deal', label: 'Register Deal', icon: Plus }]
     : [{ id: 'partner-dashboard', label: 'My Deals', icon: FileText }, { id: 'register-deal', label: 'Register Deal', icon: Plus }]

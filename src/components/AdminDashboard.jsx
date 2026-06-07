@@ -7,7 +7,7 @@ import DealDetail from './DealDetail'
 import PartnerManagement from './PartnerManagement'
 import { Plus, Search, FileText, Clock, CheckCircle2, Users } from 'lucide-react'
 
-export default function AdminDashboard({ profile, onNavigate }) {
+export default function AdminDashboard({ profile, session, onNavigate }) {
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedDeal, setSelectedDeal] = useState(null)
@@ -37,7 +37,7 @@ export default function AdminDashboard({ profile, onNavigate }) {
   }, [loadDeals])
 
   if (showForm) return <div className="p-4 sm:p-8"><DealForm profile={profile} onCancel={() => setShowForm(false)} onSuccess={() => { setShowForm(false); loadDeals() }} /></div>
-  if (showPartners) return <PartnerManagement profile={profile} onBack={() => setShowPartners(false)} />
+  if (showPartners) return <PartnerManagement profile={profile} session={session} onBack={() => setShowPartners(false)} />
 
   const filtered = deals.filter(d => {
     if (statusFilter !== 'all' && d.status !== statusFilter) return false
