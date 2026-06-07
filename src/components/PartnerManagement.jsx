@@ -18,18 +18,37 @@ export default function PartnerManagement({ profile, session, onBack }) {
   const [confirmTarget, setConfirmTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState(null)
+  const [loadError, setLoadError] = useState(null)
 
   const isSuperAdmin = profile?.role === 'super_admin'
 
   const load = useCallback(async () => {
-    const [{ data: profileData }, { data: dealData }] = await Promise.all([
+    setLoading(true)
+    const [partnersRes, dealsRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('role', 'partner').order('company'),
       supabase.from('deals').select('*').order('created_at', { ascending: false }),
     ])
-    setPartners(profileData || [])
-    setDeals(dealData || [])
+    // Don't swallow query failures — surface them instead of rendering empty counts.
+    if (partnersRes.error) console.error('[PartnerManagement] partners query failed:', partnersRes.error)
+    if (dealsRes.error) console.error('[PartnerManagement] deals query failed:', dealsRes.error)
+
+    const partnerRows = partnersRes.data || []
+    const dealRows = dealsRes.data || []
+
+    // RLS returns 0 rows (with NO error) when the current role lacks a SELECT policy on
+    // public.deals. If partners load but deals come back empty, that's the likely cause.
+    if (!dealsRes.error && dealRows.length === 0 && partnerRows.length > 0) {
+      console.warn(
+        '[PartnerManagement] Loaded %d partners but 0 deals. If deals exist in the DB, the current role (%s) is probably not covered by a SELECT policy on public.deals — update the deals RLS policies to include super_admin.',
+        partnerRows.length, profile?.role,
+      )
+    }
+
+    setPartners(partnerRows)
+    setDeals(dealRows)
+    setLoadError(dealsRes.error?.message || partnersRes.error?.message || null)
     setLoading(false)
-  }, [])
+  }, [profile?.role])
 
   useEffect(() => { load() }, [load])
 
@@ -92,6 +111,13 @@ export default function PartnerManagement({ profile, session, onBack }) {
           <h2 className="text-sm font-bold text-slate-800">{loading ? 'Partners' : `${filtered.length} Partner${filtered.length === 1 ? '' : 's'}`}</h2>
           <div className="relative sm:ml-auto w-full sm:w-auto"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input className="pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 w-full sm:w-64" placeholder="Search by name or company..." value={search} onChange={e => setSearch(e.target.value)} /></div>
         </div>
+
+        {loadError && (
+          <div className="m-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex gap-2">
+            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+            <span>Couldn't load data: {loadError}</span>
+          </div>
+        )}
 
         {loading ? (
           <div className="p-12 text-center"><div className="w-8 h-8 border-2 border-slate-200 border-t-atlas-600 rounded-full animate-spin mx-auto" /></div>
