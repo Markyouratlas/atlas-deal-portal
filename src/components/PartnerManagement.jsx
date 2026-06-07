@@ -19,6 +19,7 @@ export default function PartnerManagement({ profile, session, onBack }) {
   const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState(null)
   const [loadError, setLoadError] = useState(null)
+  const [unassignedExpanded, setUnassignedExpanded] = useState(false)
 
   const isSuperAdmin = profile?.role === 'super_admin'
 
@@ -98,6 +99,11 @@ export default function PartnerManagement({ profile, session, onBack }) {
 
   const q = search.toLowerCase()
   const filtered = partners.filter(p => !q || (p.company || '').toLowerCase().includes(q) || (p.contact_name || '').toLowerCase().includes(q))
+
+  // Deals whose partner_id doesn't map to a partner account (e.g. registered by an
+  // admin/super_admin on behalf of someone, or for an unregistered partner).
+  const partnerIds = new Set(partners.map(p => p.id))
+  const unassignedDeals = deals.filter(d => !partnerIds.has(d.partner_id))
 
   return (
     <div className="p-4 sm:p-8 max-w-6xl mx-auto">
@@ -187,6 +193,34 @@ export default function PartnerManagement({ profile, session, onBack }) {
           </div>
         )}
       </div>
+
+      {/* Unassigned / staff-registered deals — partner_id doesn't map to a partner account */}
+      {!loading && unassignedDeals.length > 0 && (
+        <div className="bg-white rounded-xl border border-amber-200 shadow-sm mt-6 overflow-hidden">
+          <button onClick={() => setUnassignedExpanded(v => !v)} className="w-full text-left p-4 flex items-center gap-3 hover:bg-amber-50/50 transition-colors">
+            {unassignedExpanded ? <ChevronDown size={16} className="text-amber-500 shrink-0" /> : <ChevronRight size={16} className="text-amber-400 shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-800 flex items-center gap-2"><AlertTriangle size={14} className="text-amber-500" /> Unassigned / Staff-Registered Deals</p>
+              <p className="text-xs text-slate-400 mt-0.5">Deals not linked to a partner account (registered by admin/super_admin or for an unregistered partner)</p>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 shrink-0">{unassignedDeals.length}</span>
+          </button>
+          {unassignedExpanded && (
+            <div className="bg-amber-50/40 border-t border-amber-100 px-4 py-3 space-y-1.5">
+              {unassignedDeals.map(deal => (
+                <button key={deal.id} onClick={() => setSelectedDeal(deal)} className="w-full text-left p-3 rounded-lg bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all flex items-center gap-3">
+                  <Building2 size={14} className="text-slate-300 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{deal.business_name}</p>
+                    <p className="text-xs text-slate-400 truncate">{deal.contact_name} · {new Date(deal.created_at).toLocaleDateString()}{deal.partner_company ? ` · recorded partner: ${deal.partner_company}` : ''}</p>
+                  </div>
+                  <StatusBadge status={deal.status} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {selectedDeal && <DealDetail deal={selectedDeal} isAdmin={true} onClose={() => setSelectedDeal(null)} onUpdate={load} />}
 
