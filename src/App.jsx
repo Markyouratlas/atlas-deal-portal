@@ -7,6 +7,7 @@ import AdminDashboard from './components/AdminDashboard'
 import DealForm from './components/DealForm'
 import NotificationSettings from './components/NotificationSettings'
 import AdminSettings from './components/AdminSettings'
+import AdminManagement from './components/AdminManagement'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -37,6 +38,13 @@ export default function App() {
       .eq('id', userId)
       .single()
     if (data) {
+      // Locked accounts are blocked from the app entirely.
+      if (data.locked) {
+        sessionStorage.setItem('atlas_locked', '1')
+        await supabase.auth.signOut()
+        setProfile(null); setSession(null); setLoading(false)
+        return
+      }
       setProfile(data)
       const admin = data.role === 'admin' || data.role === 'super_admin'
       setView(admin ? 'admin-dashboard' : 'partner-dashboard')
@@ -68,6 +76,7 @@ export default function App() {
   }
 
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin'
+  const isSuperAdmin = profile.role === 'super_admin'
   const navigate = (v) => { setView(v); setMobileMenuOpen(false) }
 
   const renderView = () => {
@@ -87,6 +96,9 @@ export default function App() {
     }
     if (view === 'settings' && isAdmin) {
       return <AdminSettings profile={profile} />
+    }
+    if (view === 'manage-admins' && isSuperAdmin) {
+      return <AdminManagement profile={profile} session={session} onNavigate={navigate} />
     }
     if (isAdmin) {
       return <AdminDashboard profile={profile} session={session} onNavigate={navigate} />

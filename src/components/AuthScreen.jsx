@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { TSD_OPTIONS } from '../lib/constants'
 import { AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react'
+
+const SUSPENDED_MSG = 'Your account has been suspended. Contact your administrator.'
 
 export default function AuthScreen() {
   const [mode, setMode] = useState('login')
@@ -19,10 +21,27 @@ export default function AuthScreen() {
 
   const tsdName = tsdChoice === 'Other' ? tsdOther.trim() : tsdChoice
 
+  // A locked account that was signed out elsewhere leaves a flag; show the message on return.
+  useEffect(() => {
+    if (sessionStorage.getItem('atlas_locked')) {
+      sessionStorage.removeItem('atlas_locked')
+      setError(SUSPENDED_MSG)
+    }
+  }, [])
+
   const handleLogin = async () => {
     setError(''); setSubmitting(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) { setError(error.message); setSubmitting(false); return }
+    // Block suspended accounts immediately after authentication.
+    const { data: prof } = await supabase.from('profiles').select('locked').eq('id', data.user.id).single()
+    if (prof?.locked) {
+      sessionStorage.setItem('atlas_locked', '1')
+      await supabase.auth.signOut()
+      setError(SUSPENDED_MSG)
+      setSubmitting(false)
+      return
+    }
     setSubmitting(false)
   }
 

@@ -1,9 +1,16 @@
-import { FileText, BarChart3, Bell, Plus, LogOut, Menu, X, Settings } from 'lucide-react'
+import { FileText, BarChart3, Bell, Plus, LogOut, Menu, X, Settings, ShieldCheck } from 'lucide-react'
 
 export default function Sidebar({ profile, view, onNavigate, onLogout, mobileMenuOpen, onToggleMobile }) {
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
+  const isSuperAdmin = profile?.role === 'super_admin'
   const navItems = isAdmin
-    ? [{ id: 'admin-dashboard', label: 'Pipeline', icon: BarChart3 }, { id: 'notifications', label: 'Notifications', icon: Bell }, { id: 'settings', label: 'Settings', icon: Settings }, { id: 'register-deal', label: 'Register Deal', icon: Plus }]
+    ? [
+        { id: 'admin-dashboard', label: 'Pipeline', icon: BarChart3 },
+        { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'settings', label: 'Settings', icon: Settings },
+        ...(isSuperAdmin ? [{ id: 'manage-admins', label: 'Manage Admins', icon: ShieldCheck }] : []),
+        { id: 'register-deal', label: 'Register Deal', icon: Plus },
+      ]
     : [{ id: 'partner-dashboard', label: 'My Deals', icon: FileText }, { id: 'register-deal', label: 'Register Deal', icon: Plus }]
 
   return (
