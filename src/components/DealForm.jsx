@@ -5,7 +5,7 @@ import { Input, Button, FlagBadge } from './UI'
 import { ArrowLeft, ArrowRight, Building2, Send, AlertCircle, Users, UserPlus } from 'lucide-react'
 
 export default function DealForm({ profile, onCancel, onSuccess }) {
-  const isAdmin = profile.role === 'admin'
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin'
   // Step keys differ by role: admins pick a partner first.
   const steps = isAdmin ? ['partner', 'business', 'qualify'] : ['business', 'qualify']
   const STEP_LABELS = { partner: 'Select Partner', business: 'Business Details', qualify: 'Qualification Questions' }
