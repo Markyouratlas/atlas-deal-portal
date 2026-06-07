@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { StatusBadge, FlagBadge, Input, Button } from './UI'
 import { STATUS_CONFIG, DEMO_BOOKING_URL } from '../lib/constants'
-import { X, Phone, Shield, Check, Calendar } from 'lucide-react'
+import { X, Phone, Shield, Check, Calendar, UserCheck } from 'lucide-react'
 
 export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
   const [status, setStatus] = useState(deal.status)
@@ -34,6 +34,18 @@ export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
             <span className="text-xs text-slate-400">· by {deal.partner_company}</span>
           </div>
           {deal.contact_phone && <div className="flex items-center gap-2 text-sm text-slate-600"><Phone size={14} className="text-slate-400" /> {deal.contact_phone}</div>}
+
+          {(deal.tsd_name || deal.rep_name || deal.rep_email || deal.rep_phone) && (
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-2"><UserCheck size={13} style={{ color: '#6639a6' }} /> TSD & Rep</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                {deal.tsd_name && <div><p className="text-xs text-slate-400">Master Agent / TSD</p><p className="text-sm text-slate-700">{deal.tsd_name}</p></div>}
+                {deal.rep_name && <div><p className="text-xs text-slate-400">Tech Advisor / Channel Manager</p><p className="text-sm text-slate-700">{deal.rep_name}</p></div>}
+                {deal.rep_email && <div><p className="text-xs text-slate-400">Rep Email</p><p className="text-sm text-slate-700">{deal.rep_email}</p></div>}
+                {deal.rep_phone && <div><p className="text-xs text-slate-400">Rep Phone</p><p className="text-sm text-slate-700">{deal.rep_phone}</p></div>}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[

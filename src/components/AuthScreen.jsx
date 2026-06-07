@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { TSD_OPTIONS } from '../lib/constants'
 import { AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
 export default function AuthScreen() {
@@ -10,9 +11,13 @@ export default function AuthScreen() {
   const [company, setCompany] = useState('')
   const [contact, setContact] = useState('')
   const [phone, setPhone] = useState('')
+  const [tsdChoice, setTsdChoice] = useState('')
+  const [tsdOther, setTsdOther] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const tsdName = tsdChoice === 'Other' ? tsdOther.trim() : tsdChoice
 
   const handleLogin = async () => {
     setError(''); setSubmitting(true)
@@ -35,7 +40,7 @@ export default function AuthScreen() {
       email,
       password,
       options: {
-        data: { company, contact_name: contact, phone },
+        data: { company, contact_name: contact, phone, tsd_name: tsdName },
         emailRedirectTo: window.location.origin,
       },
     })
@@ -109,6 +114,19 @@ export default function AuthScreen() {
                   <span className="block text-xs font-medium text-slate-300 mb-1.5">Company Name *</span>
                   <input type="text" className={darkInput} value={company} onChange={e => setCompany(e.target.value)} placeholder="Your advisory firm" />
                 </label>
+                <label className="block">
+                  <span className="block text-xs font-medium text-slate-300 mb-1.5">Master Agent / TSD</span>
+                  <select className={darkInput + ' [&>option]:text-slate-800'} value={tsdChoice} onChange={e => setTsdChoice(e.target.value)}>
+                    <option value="" disabled>Select a TSD...</option>
+                    {TSD_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </label>
+                {tsdChoice === 'Other' && (
+                  <label className="block">
+                    <span className="block text-xs font-medium text-slate-300 mb-1.5">TSD Name</span>
+                    <input type="text" className={darkInput} value={tsdOther} onChange={e => setTsdOther(e.target.value)} placeholder="Enter master agent / TSD name" />
+                  </label>
+                )}
                 <label className="block">
                   <span className="block text-xs font-medium text-slate-300 mb-1.5">Your Name *</span>
                   <input type="text" className={darkInput} value={contact} onChange={e => setContact(e.target.value)} placeholder="Full name" />

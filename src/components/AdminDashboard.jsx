@@ -4,6 +4,7 @@ import { Button, StatusBadge, FlagBadge } from './UI'
 import { STATUS_CONFIG } from '../lib/constants'
 import DealForm from './DealForm'
 import DealDetail from './DealDetail'
+import PartnerManagement from './PartnerManagement'
 import { Plus, Search, FileText, Clock, CheckCircle2, Users } from 'lucide-react'
 
 export default function AdminDashboard({ profile, onNavigate }) {
@@ -13,6 +14,7 @@ export default function AdminDashboard({ profile, onNavigate }) {
   const [statusFilter, setStatusFilter] = useState('all')
   const [searchTerm, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [showPartners, setShowPartners] = useState(false)
 
   const loadDeals = useCallback(async () => {
     const { data } = await supabase
@@ -35,6 +37,7 @@ export default function AdminDashboard({ profile, onNavigate }) {
   }, [loadDeals])
 
   if (showForm) return <div className="p-4 sm:p-8"><DealForm profile={profile} onCancel={() => setShowForm(false)} onSuccess={() => { setShowForm(false); loadDeals() }} /></div>
+  if (showPartners) return <PartnerManagement profile={profile} onBack={() => setShowPartners(false)} />
 
   const filtered = deals.filter(d => {
     if (statusFilter !== 'all' && d.status !== statusFilter) return false
@@ -51,11 +54,18 @@ export default function AdminDashboard({ profile, onNavigate }) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        {[{ label: 'Total Deals', value: stats.total, icon: FileText, color: '#6639a6', bg: 'rgba(102,57,166,0.08)' }, { label: 'Pending Review', value: stats.pending, icon: Clock, color: '#d97706', bg: 'rgba(217,119,6,0.08)' }, { label: 'Qualified', value: stats.qualified, icon: CheckCircle2, color: '#059669', bg: 'rgba(5,150,105,0.08)' }, { label: 'Active Partners', value: stats.partners, icon: Users, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' }].map((s, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        {[
+          { label: 'Total Deals', value: stats.total, icon: FileText, color: '#6639a6', bg: 'rgba(102,57,166,0.08)', action: () => { setShowPartners(false); setStatusFilter('all') }, active: !showPartners && statusFilter === 'all' },
+          { label: 'Pending Review', value: stats.pending, icon: Clock, color: '#d97706', bg: 'rgba(217,119,6,0.08)', action: () => { setShowPartners(false); setStatusFilter('pending') }, active: !showPartners && statusFilter === 'pending' },
+          { label: 'Qualified', value: stats.qualified, icon: CheckCircle2, color: '#059669', bg: 'rgba(5,150,105,0.08)', action: () => { setShowPartners(false); setStatusFilter('qualified') }, active: !showPartners && statusFilter === 'qualified' },
+          { label: 'Active Partners', value: stats.partners, icon: Users, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)', action: () => setShowPartners(true), active: showPartners },
+        ].map((s, i) => (
+          <button key={i} onClick={s.action}
+            className={`text-left bg-white rounded-xl border p-4 shadow-sm transition-all hover:shadow-md hover:border-slate-300 cursor-pointer ${s.active ? 'ring-2 ring-offset-1' : 'border-slate-200'}`}
+            style={s.active ? { borderColor: s.color, '--tw-ring-color': s.color } : {}}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: s.bg }}><s.icon size={16} style={{ color: s.color }} /></div>
             <p className="text-2xl font-bold text-slate-800">{loading ? '—' : s.value}</p><p className="text-xs text-slate-400">{s.label}</p>
-          </div>
+          </button>
         ))}
       </div>
 

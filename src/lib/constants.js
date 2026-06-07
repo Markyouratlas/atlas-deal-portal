@@ -8,3 +8,6 @@ export const STATUS_CONFIG = {
 }
 
 export const DEMO_BOOKING_URL = 'https://cal.com/heatheratlas/atlas-channel-partner-30-min-demo'
+
+// Master Agent / TSD options shown in the signup and admin deal-registration flows.
+export const TSD_OPTIONS = ['Telarus', 'Sandler', 'Avant', 'Clover', 'Intelisys', 'Other']
