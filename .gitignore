@@ -18,6 +18,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Supabase CLI (local cache + secrets — never commit)
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+
 # Editor/OS
 .vscode/*
 !.vscode/extensions.json

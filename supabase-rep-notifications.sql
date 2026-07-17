@@ -7,7 +7,7 @@
 -- supabase-deal-closing-statuses.sql first — this trigger reads the
 -- public.app_settings 'closed_deal_emails' flag it creates.
 -- Requires the `notify-rep` Edge Function to be deployed (see
--- supabase-functions/notify-rep/index.ts).
+-- supabase/functions/notify-rep/index.ts).
 -- =====================================================
 
 -- 1. NEW COLUMNS ---------------------------------------------------
@@ -95,7 +95,8 @@ create trigger trg_notify_rep_update
 -- =====================================================
 -- DONE! You should see "Success. No rows returned."
 --
--- Deploy the function:   supabase functions deploy notify-rep --no-verify-jwt
+-- Deploy the function:   supabase functions deploy notify-rep
+--                        (verify_jwt=false is set in supabase/config.toml)
 -- Set its secret:        supabase secrets set RESEND_API_KEY=<your key>
 -- (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided automatically.)
 --

@@ -1,0 +1,10 @@
+# Supabase CLI project config.
+# `project_id` is a local identifier; the deploy target comes from `supabase link`.
+project_id = "atlas-deal-portal"
+
+# notify-rep is invoked by a Postgres trigger (pg_net) with the service key,
+# not by an end-user JWT, so JWT verification is disabled. This replaces the
+# deprecated `--no-verify-jwt` deploy flag.
+[functions.notify-rep]
+enabled = true
+verify_jwt = false
