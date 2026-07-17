@@ -3,6 +3,9 @@
 -- Run in: Supabase Dashboard → SQL Editor → New Query → Paste → Run
 --
 -- Idempotent (safe to re-run). Run AFTER the base migration.
+-- If you use the closing-status email capability, also run
+-- supabase-deal-closing-statuses.sql first — this trigger reads the
+-- public.app_settings 'closed_deal_emails' flag it creates.
 -- Requires the `notify-rep` Edge Function to be deployed (see
 -- supabase-functions/notify-rep/index.ts).
 -- =====================================================
@@ -41,6 +44,18 @@ begin
     if (OLD.status is distinct from NEW.status) then
       if    (NEW.status = 'qualified') then v_action := 'deal_qualified';
       elsif (NEW.status = 'declined')  then v_action := 'deal_declined';
+      elsif (NEW.status in ('closed_won', 'closed_lost', 'closed_churned')) then
+        -- Closing statuses: capability is built but gated OFF by default so
+        -- closing a deal sends NO email. Flip on later with:
+        --   update public.app_settings set value = 'true' where key = 'closed_deal_emails';
+        -- Recipient stays the rep/partner (same as every other rep email) — never the end client.
+        if (select value from public.app_settings where key = 'closed_deal_emails') = 'true' then
+          v_action := case NEW.status
+                        when 'closed_won'     then 'deal_closed_won'
+                        when 'closed_lost'    then 'deal_closed_lost'
+                        when 'closed_churned' then 'deal_closed_churned'
+                      end;
+        end if;
       end if;  -- pending / demo_booked: no rep email
     end if;
   end if;
