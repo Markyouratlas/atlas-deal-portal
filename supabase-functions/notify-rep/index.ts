@@ -13,8 +13,12 @@
 //                                (defaults to the portal's production domain)
 //
 // Invoked by the deals DB trigger (see supabase-rep-notifications.sql) with:
-//   { "action": "deal_submitted" | "deal_qualified" | "deal_declined",
+//   { "action": "deal_submitted" | "deal_qualified" | "deal_declined"
+//             | "deal_closed_won" | "deal_closed_lost" | "deal_closed_churned",
 //     "deal": <the deals row as JSON> }
+// The closing-status actions are only sent when the app_settings
+// 'closed_deal_emails' flag is enabled (OFF by default); recipient is always
+// the rep/partner, never the end client.
 // =====================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -158,6 +162,42 @@ function buildEmail(action: string, deal: Deal, calendarUrl: string): { subject:
         heading: "An update on your deal",
         intro: `After review, <strong>${biz}</strong> doesn't meet our current qualification criteria. Feel free to submit new opportunities anytime — we appreciate you working with Atlas.`,
         bodyHtml: notes + summary,
+      }),
+    };
+  }
+
+  // --- Closing-status emails (rep/partner recipient, same as above) ---
+  // Only reached when the DB trigger is enabled via the app_settings
+  // 'closed_deal_emails' flag; disabled by default. Never targets the end client.
+  if (action === "deal_closed_won") {
+    return {
+      subject: "Atlas Deal Portal — Deal Closed Won 🎉",
+      html: emailLayout({
+        heading: "Deal closed — won! 🎉",
+        intro: `Congratulations! Your deal for <strong>${biz}</strong> has closed as won. Thank you for partnering with Atlas — here's to the next one.`,
+        bodyHtml: summary,
+      }),
+    };
+  }
+
+  if (action === "deal_closed_lost") {
+    return {
+      subject: "Atlas Deal Portal — Deal Update",
+      html: emailLayout({
+        heading: "An update on your deal",
+        intro: `Your deal for <strong>${biz}</strong> has been closed as lost. We appreciate the opportunity — please keep sending new deals our way.`,
+        bodyHtml: summary,
+      }),
+    };
+  }
+
+  if (action === "deal_closed_churned") {
+    return {
+      subject: "Atlas Deal Portal — Deal Update",
+      html: emailLayout({
+        heading: "An update on your deal",
+        intro: `Your deal for <strong>${biz}</strong> has been closed as churned. Thank you for working with Atlas — we'd welcome new opportunities anytime.`,
+        bodyHtml: summary,
       }),
     };
   }
