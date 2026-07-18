@@ -37,7 +37,7 @@ export default function PartnerDashboard({ profile, onNavigate }) {
   if (showForm) return <div className="p-4 sm:p-8"><DealForm profile={profile} onCancel={() => setShowForm(false)} onSuccess={() => { setShowForm(false); loadDeals() }} /></div>
 
   const filtered = deals.filter(d => d.business_name.toLowerCase().includes(searchTerm.toLowerCase()) || d.contact_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  const stats = { total: deals.length, pending: deals.filter(d => d.status === 'pending').length, qualified: deals.filter(d => d.status === 'qualified' || d.status === 'demo_booked').length }
+  const stats = { total: deals.length, pending: deals.filter(d => d.status === 'pending').length, qualified: deals.filter(d => d.status === 'qualified' || d.status === 'demo_scheduled').length }
 
   return (
     <div className="p-4 sm:p-8 max-w-5xl mx-auto">

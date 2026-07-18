@@ -5,7 +5,7 @@ import { STATUS_CONFIG } from '../lib/constants'
 import DealDetail from './DealDetail'
 import { ArrowLeft, Search, Users, ChevronRight, ChevronDown, Mail, Phone, Building2, Calendar, Trash2, AlertTriangle, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 
-const COUNT_KEYS = ['pending', 'qualified', 'declined', 'demo_booked', 'closed_won', 'closed_lost', 'closed_churned']
+const COUNT_KEYS = ['pending', 'qualified', 'declined', 'intro_call_pre_demo', 'demo_scheduled', 'demo_complete', 'poc_proposal_sent', 'closed_won', 'closed_lost', 'closed_churned']
 const DELETE_USER_URL = 'https://hkpglfdslglrjcgzbqpx.supabase.co/functions/v1/delete-user'
 
 export default function PartnerManagement({ profile, session, onBack }) {

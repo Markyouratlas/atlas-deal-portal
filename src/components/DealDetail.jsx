@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { StatusBadge, FlagBadge, Input, Button } from './UI'
-import { STATUS_CONFIG, DEMO_BOOKING_URL } from '../lib/constants'
+import { STATUS_CONFIG, statusTooltip, DEMO_BOOKING_URL } from '../lib/constants'
 import { X, Phone, Shield, Check, Calendar, UserCheck } from 'lucide-react'
 
 export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
@@ -87,7 +87,7 @@ export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
                 <p className="text-xs font-medium text-slate-500 mb-2">Update Status</p>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                    <button key={key} onClick={() => setStatus(key)}
+                    <button key={key} onClick={() => setStatus(key)} title={statusTooltip(key)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${status === key ? `${cfg.bg} ${cfg.border} ${cfg.color}` : 'border-slate-200 text-slate-400 hover:border-slate-300'}`}>
                       {cfg.label}
                     </button>

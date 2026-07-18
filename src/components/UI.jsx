@@ -1,5 +1,5 @@
 import { Zap, AlertCircle } from 'lucide-react'
-import { STATUS_CONFIG } from '../lib/constants'
+import { STATUS_CONFIG, statusTooltip } from '../lib/constants'
 
 export function FlagBadge({ flag }) {
   if (flag === 'green') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"><Zap size={11} /> Great Fit</span>
@@ -9,7 +9,7 @@ export function FlagBadge({ flag }) {
 export function StatusBadge({ status }) {
   const c = STATUS_CONFIG[status] || STATUS_CONFIG.pending
   const Icon = c.icon
-  return <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.bg} ${c.color} ${c.border} border`}><Icon size={13} /> {c.label}</span>
+  return <span title={statusTooltip(status)} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.bg} ${c.color} ${c.border} border`}><Icon size={13} /> {c.label}</span>
 }
 
 export function Input({ label, type = 'text', value, onChange, placeholder, required, textarea, hint }) {
