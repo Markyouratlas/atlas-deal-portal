@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { StatusBadge, FlagBadge, Input, Button } from './UI'
-import { STATUS_CONFIG, statusTooltip, DEMO_BOOKING_URL } from '../lib/constants'
-import { X, Phone, Shield, Check, Calendar, UserCheck } from 'lucide-react'
+import { STATUS_CONFIG, statusTooltip, DEMO_BOOKING_URL, ASSIGNEES, assigneeForTsd, assigneeLabel } from '../lib/constants'
+import { X, Phone, Shield, Check, Calendar, UserCheck, UserCog } from 'lucide-react'
 
 export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
   const [status, setStatus] = useState(deal.status)
   const [notes, setNotes] = useState(deal.notes || '')
+  const [assignedTo, setAssignedTo] = useState(deal.assigned_to || assigneeForTsd(deal.tsd_name))
   const [saving, setSaving] = useState(false)
 
   const saveStatus = async () => {
@@ -15,7 +16,7 @@ export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
     const now = new Date().toISOString()
     const { error } = await supabase
       .from('deals')
-      .update({ status, notes, reviewed_by: user?.id || null, reviewed_at: now, updated_at: now })
+      .update({ status, notes, assigned_to: assignedTo, reviewed_by: user?.id || null, reviewed_at: now, updated_at: now })
       .eq('id', deal.id)
     setSaving(false)
     if (!error && onUpdate) onUpdate()
@@ -32,6 +33,7 @@ export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
         <div className="p-6 space-y-5">
           <div className="flex flex-wrap gap-2 items-center">
             <StatusBadge status={deal.status} />
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1"><UserCog size={12} /> {assigneeLabel(deal.assigned_to)}</span>
             <span className="text-xs text-slate-400">Submitted {new Date(deal.created_at).toLocaleDateString()}</span>
             <span className="text-xs text-slate-400">· by {deal.partner_company}</span>
           </div>
@@ -90,6 +92,17 @@ export default function DealDetail({ deal, isAdmin, onClose, onUpdate }) {
                     <button key={key} onClick={() => setStatus(key)} title={statusTooltip(key)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${status === key ? `${cfg.bg} ${cfg.border} ${cfg.color}` : 'border-slate-200 text-slate-400 hover:border-slate-300'}`}>
                       {cfg.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500 mb-2">Assigned To</p>
+                <div className="flex flex-wrap gap-2">
+                  {[ASSIGNEES.heather, ASSIGNEES.omer].map(email => (
+                    <button key={email} onClick={() => setAssignedTo(email)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${assignedTo === email ? 'bg-violet-50 border-violet-300 text-violet-700' : 'border-slate-200 text-slate-400 hover:border-slate-300'}`}>
+                      {assigneeLabel(email)}
                     </button>
                   ))}
                 </div>

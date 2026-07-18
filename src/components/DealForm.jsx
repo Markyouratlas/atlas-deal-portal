@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { TSD_OPTIONS } from '../lib/constants'
+import { TSD_OPTIONS, assigneeForTsd } from '../lib/constants'
 import { Input, Button, FlagBadge } from './UI'
 import { ArrowLeft, ArrowRight, Building2, Send, AlertCircle, Users, UserPlus } from 'lucide-react'
 
@@ -70,6 +70,7 @@ export default function DealForm({ profile, onCancel, onSuccess }) {
     setSubmitting(true)
     const { error } = await supabase.from('deals').insert({
       ...partnerFields,
+      assigned_to: assigneeForTsd(partnerFields.tsd_name),
       business_name: form.business_name,
       contact_name: form.contact_name,
       contact_email: form.contact_email,
