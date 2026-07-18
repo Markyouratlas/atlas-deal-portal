@@ -32,22 +32,24 @@ Guidance for Claude Code working in this repo. Live at `deals.youratlas.com`.
 - The scorecard's status matcher is **tolerant** (normalizes case / underscores / spacing), so slugs like `closed_won` bucket correctly: `closed_won` → Won; `closed_lost`, `closed_churned`, `declined` → Lost; everything else → Open (counts toward pipeline).
 - Because of this, **keep new statuses as tidy slugs** matching the portal's convention.
 
-## Phase B: bidirectional deal sync
+## Phase B: bidirectional deal sync — ✅ LIVE (2026-07-18)
 
 Full contract: **`docs/phase-b-integration.md`** (mirrored in the `csm-scorecard` repo). Deal **stage**
 syncs in all directions between Attio, the scorecard `channel_deals`, and the portal `deals`, all keyed
-by the same id (`external_id` = `channel_deals.id` = `deals.id`).
+by the same id (`external_id` = `channel_deals.id` = `deals.id`). Shipped and verified end-to-end: an
+Attio stage change on a portal-originated deal propagates to `channel_deals` and the portal `deals` row.
 
-- **Down-sync (scorecard → portal)** is owned here: edge function **`supabase/functions/deal-sync-inbound/index.ts`**.
-  It receives the scorecard's `channel_deals` **DB-webhook** native payload (`{ type, record, old_record, … }`),
-  authenticates on the **`X-Sync-Secret`** header (matches the `SYNC_SECRET` Supabase secret), and
-  **UPDATEs `deals` by `id`, status-only, write-if-changed** (the compare-and-skip is the loop guard).
-  It only acts on `record.origin === 'portal'` and never INSERTs.
+- **Down-sync (scorecard → portal)** is owned here: edge function **`supabase/functions/deal-sync-inbound/index.ts`**
+  (deployed, `verify_jwt=false`). It receives the scorecard's `channel_deals` **DB-webhook** native payload
+  (`{ type, record, old_record, … }`), authenticates on the **`X-Sync-Secret`** header (matches the
+  `SYNC_SECRET` Supabase secret — already set), and **UPDATEs `deals` by `id`, status-only, write-if-changed**
+  (the compare-and-skip is the loop guard). It only acts on `record.origin === 'portal'` and never INSERTs.
 - **Loop safety:** every writer is write-if-changed; a change travels the ring once and stops. `deal-sync-inbound`'s
   "already in sync" no-op is one of those guards.
 - **v1 is status-only** — value (`avg_value`) sync is deferred.
-- To enable the down-sync in production: `supabase secrets set SYNC_SECRET=…`, deploy the function, and have
-  the scorecard side point a `channel_deals` DB webhook at it with the matching `X-Sync-Secret` header.
+- **Rotating `SYNC_SECRET`:** update it in **two** places or the header stops matching (→ 401) —
+  `supabase secrets set SYNC_SECRET=…` in this project **and** the scorecard's `channel_deals` webhook
+  `X-Sync-Secret` header. No function redeploy needed (read at runtime).
 
 ## Email notifications (rep/partner emails)
 
