@@ -8,3 +8,9 @@ project_id = "atlas-deal-portal"
 [functions.notify-rep]
 enabled = true
 verify_jwt = false
+
+# deal-sync-inbound is invoked by the scorecard's channel_deals DB webhook,
+# authenticated by the X-Sync-Secret header (SYNC_SECRET) rather than a JWT.
+[functions.deal-sync-inbound]
+enabled = true
+verify_jwt = false
