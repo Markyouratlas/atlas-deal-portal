@@ -25,6 +25,14 @@ Guidance for Claude Code working in this repo. Live at `deals.youratlas.com`.
 - **`STATUS_CONFIG` in `src/lib/constants.js` is the single source of truth for the UI** (label, colors, icon, dot, `emails` flag), keyed by the stored slug. `statusTooltip(slug)` builds the hover tooltip (email behavior + Attio-linked note); `StatusBadge` and the `DealDetail.jsx` admin buttons use it. `DealDetail.jsx` admin buttons and `AdminDashboard.jsx` filter chips iterate `Object.entries(STATUS_CONFIG)`, so adding a status there surfaces it everywhere automatically. Exceptions that hardcode slugs: `PartnerManagement.jsx` (`COUNT_KEYS`), `PartnerDashboard.jsx` / `AdminDashboard.jsx` stat tiles.
 - If you add/change a status slug, you MUST also update the `deals_status_check` constraint (latest is `supabase-phase-b-vocab.sql`) **and** the `KNOWN_STATUSES` set in `supabase/functions/deal-sync-inbound/index.ts`, or saves/sync are rejected.
 
+### Deal assignment (`deals.assigned_to`)
+
+- **`deals.assigned_to`** (text) = the assignee's **Atlas email** — the same identity the scorecard authenticates with, so it filters each person's view by `channel_deals.assigned_to` (exact email match, no mapping table).
+- **Rule** (`assigneeForTsd` in `src/lib/constants.js`): `tsd_name === 'Sandler'` → `omer@youratlas.com`, else `heather@youratlas.com`. `ASSIGNEES` / `assigneeLabel` are the other helpers. Free text — **no CHECK constraint** (so a 3rd seller needs no migration).
+- **Set app-side** on the single insert path (`DealForm.submit()`); admins **override** per-deal in `DealDetail.jsx` (the "Assigned To" buttons, persisted in `saveStatus`). Backfill via `supabase-deal-assignment.sql`.
+- **Per-assignee view** (`AdminDashboard.jsx`): each staff user defaults to their own assigned deals if they have any, else all deals; **super_admins** get a "My Deals / All Deals" toggle (`isSuperAdmin`). The scope is a client-side UI filter, not RLS — staff can still read all deals.
+- **Sync:** the portal only adds/populates the column; the existing DB webhook's native full-row payload carries `assigned_to` to the scorecard automatically. The scorecard owns `channel_deals.assigned_to` and must not let the Attio write-back clobber it (portal-owned; `deal-sync-inbound` only writes `status`).
+
 ## Scorecard integration (cross-project)
 
 - The portal and Heather's Attio CRM both feed a separate app called **"scorecard"**, which aggregates deals into its own `channel_deals` table and computes "Open Partner Pipeline".

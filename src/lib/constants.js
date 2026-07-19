@@ -36,3 +36,12 @@ export const DEMO_BOOKING_URL = 'https://cal.com/heatheratlas/atlas-channel-part
 
 // Master Agent / TSD options shown in the signup and admin deal-registration flows.
 export const TSD_OPTIONS = ['Telarus', 'Sandler', 'Avant', 'Clover', 'Intelisys', 'Other']
+
+// Deal assignment (deals.assigned_to). The value is the assignee's Atlas email — the same identity
+// the scorecard authenticates with, so it can filter each person's view by channel_deals.assigned_to.
+// Rule: Sandler-sourced deals go to Omer; everything else to Heather. Admins can override per-deal.
+export const ASSIGNEES = { omer: 'omer@youratlas.com', heather: 'heather@youratlas.com' }
+export const assigneeForTsd = (tsd) =>
+  (tsd || '').trim().toLowerCase() === 'sandler' ? ASSIGNEES.omer : ASSIGNEES.heather
+export const assigneeLabel = (email) =>
+  email === ASSIGNEES.omer ? 'Omer' : email === ASSIGNEES.heather ? 'Heather' : (email || '—')

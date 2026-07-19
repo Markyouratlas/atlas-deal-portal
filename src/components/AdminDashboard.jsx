@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Button, StatusBadge, FlagBadge } from './UI'
-import { STATUS_CONFIG } from '../lib/constants'
+import { STATUS_CONFIG, assigneeLabel } from '../lib/constants'
 import DealForm from './DealForm'
 import DealDetail from './DealDetail'
 import PartnerManagement from './PartnerManagement'
-import { Plus, Search, FileText, Clock, CheckCircle2, Users } from 'lucide-react'
+import { Plus, Search, FileText, Clock, CheckCircle2, Users, UserCog } from 'lucide-react'
 
 export default function AdminDashboard({ profile, session, onNavigate }) {
   const [deals, setDeals] = useState([])
@@ -15,6 +15,10 @@ export default function AdminDashboard({ profile, session, onNavigate }) {
   const [searchTerm, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [showPartners, setShowPartners] = useState(false)
+  const [scope, setScope] = useState(null) // 'mine' | 'all'; null until defaulted from loaded deals
+
+  const isSuperAdmin = profile.role === 'super_admin'
+  const myEmail = profile.email
 
   const loadDeals = useCallback(async () => {
     const { data } = await supabase
@@ -36,15 +40,24 @@ export default function AdminDashboard({ profile, session, onNavigate }) {
     return () => { supabase.removeChannel(channel) }
   }, [loadDeals])
 
+  // Default the view once deals load: to "my deals" if the user has any assigned, else "all".
+  // Only defaults once (scope === null) so a manual toggle isn't overridden by realtime reloads.
+  useEffect(() => {
+    if (scope === null && !loading) setScope(deals.some(d => d.assigned_to === myEmail) ? 'mine' : 'all')
+  }, [loading, deals, scope, myEmail])
+
   if (showForm) return <div className="p-4 sm:p-8"><DealForm profile={profile} onCancel={() => setShowForm(false)} onSuccess={() => { setShowForm(false); loadDeals() }} /></div>
   if (showPartners) return <PartnerManagement profile={profile} session={session} onBack={() => setShowPartners(false)} />
 
-  const filtered = deals.filter(d => {
+  const effScope = scope ?? 'all'
+  // Deals in the current assignment scope; status filter, search and stats all sit on top of this.
+  const scoped = effScope === 'mine' ? deals.filter(d => d.assigned_to === myEmail) : deals
+  const filtered = scoped.filter(d => {
     if (statusFilter !== 'all' && d.status !== statusFilter) return false
     if (searchTerm && !d.business_name.toLowerCase().includes(searchTerm.toLowerCase()) && !d.partner_company.toLowerCase().includes(searchTerm.toLowerCase()) && !d.contact_name.toLowerCase().includes(searchTerm.toLowerCase())) return false
     return true
   })
-  const stats = { total: deals.length, pending: deals.filter(d => d.status === 'pending').length, qualified: deals.filter(d => d.status === 'qualified').length, partners: new Set(deals.map(d => d.partner_id)).size }
+  const stats = { total: scoped.length, pending: scoped.filter(d => d.status === 'pending').length, qualified: scoped.filter(d => d.status === 'qualified').length, partners: new Set(scoped.map(d => d.partner_id)).size }
 
   return (
     <div className="p-4 sm:p-8 max-w-6xl mx-auto">
@@ -70,13 +83,26 @@ export default function AdminDashboard({ profile, session, onNavigate }) {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        {isSuperAdmin && (
+          <div className="p-4 pb-0 flex items-center gap-2">
+            <UserCog size={14} className="text-slate-400" />
+            <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
+              {[{ key: 'mine', label: 'My Deals' }, { key: 'all', label: 'All Deals' }].map(s => (
+                <button key={s.key} onClick={() => setScope(s.key)}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${effScope === s.key ? 'bg-violet-50 text-violet-700' : 'text-slate-400 hover:text-slate-600'}`}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="flex flex-wrap gap-1.5">
             {[{ key: 'all', label: 'All' }, ...Object.entries(STATUS_CONFIG).map(([k, v]) => ({ key: k, label: v.label }))].map(f => (
               <button key={f.key} onClick={() => setStatusFilter(f.key)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
                 style={statusFilter === f.key ? { background: 'rgba(102,57,166,0.08)', borderColor: 'rgba(102,57,166,0.25)', color: '#6639a6' } : { borderColor: '#e2e8f0', color: '#94a3b8' }}>
-                {f.label} ({f.key === 'all' ? deals.length : deals.filter(d => d.status === f.key).length})
+                {f.label} ({f.key === 'all' ? scoped.length : scoped.filter(d => d.status === f.key).length})
               </button>
             ))}
           </div>
@@ -89,7 +115,7 @@ export default function AdminDashboard({ profile, session, onNavigate }) {
           <>
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full"><thead><tr className="text-xs text-slate-400 font-medium border-b border-slate-100"><th className="text-left p-3 pl-4">Business</th><th className="text-left p-3">Partner</th><th className="text-left p-3">Volume</th><th className="text-left p-3">Value</th><th className="text-left p-3">Status</th><th className="text-left p-3">Date</th></tr></thead>
+              <table className="w-full"><thead><tr className="text-xs text-slate-400 font-medium border-b border-slate-100"><th className="text-left p-3 pl-4">Business</th><th className="text-left p-3">Partner</th><th className="text-left p-3">Volume</th><th className="text-left p-3">Value</th><th className="text-left p-3">Status</th><th className="text-left p-3">Owner</th><th className="text-left p-3">Date</th></tr></thead>
                 <tbody className="divide-y divide-slate-50">{filtered.map(deal => (
                   <tr key={deal.id} onClick={() => setSelectedDeal(deal)} className="hover:bg-slate-50 cursor-pointer transition-colors">
                     <td className="p-3 pl-4"><p className="text-sm font-semibold text-slate-800">{deal.business_name}</p><p className="text-xs text-slate-400">{deal.contact_name}</p></td>
@@ -97,6 +123,7 @@ export default function AdminDashboard({ profile, session, onNavigate }) {
                     <td className="p-3"><span className="text-sm text-slate-600">{deal.call_volume}</span> <FlagBadge flag={deal.call_volume_flag} /></td>
                     <td className="p-3"><span className="text-sm text-slate-600">{deal.avg_value}</span> <FlagBadge flag={deal.avg_value_flag} /></td>
                     <td className="p-3"><StatusBadge status={deal.status} /></td>
+                    <td className="p-3 text-sm text-slate-600">{assigneeLabel(deal.assigned_to)}</td>
                     <td className="p-3 text-sm text-slate-400">{new Date(deal.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}</tbody>
@@ -107,7 +134,7 @@ export default function AdminDashboard({ profile, session, onNavigate }) {
               <button key={deal.id} onClick={() => setSelectedDeal(deal)} className="w-full text-left p-4 hover:bg-slate-50 transition-colors">
                 <div className="flex items-center justify-between mb-1.5"><p className="text-sm font-semibold text-slate-800 truncate">{deal.business_name}</p><StatusBadge status={deal.status} /></div>
                 <p className="text-xs text-slate-400">{deal.partner_company} · {new Date(deal.created_at).toLocaleDateString()}</p>
-                <div className="flex gap-3 mt-2"><span className="text-xs text-slate-500">Vol: {deal.call_volume}</span><span className="text-xs text-slate-500">Val: {deal.avg_value}</span></div>
+                <div className="flex gap-3 mt-2"><span className="text-xs text-slate-500">Vol: {deal.call_volume}</span><span className="text-xs text-slate-500">Val: {deal.avg_value}</span><span className="text-xs text-slate-500 inline-flex items-center gap-1"><UserCog size={11} /> {assigneeLabel(deal.assigned_to)}</span></div>
               </button>
             ))}</div>
             {filtered.length === 0 && <div className="p-12 text-center"><p className="text-sm text-slate-500">No deals match your filters.</p></div>}
